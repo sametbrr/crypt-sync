@@ -33,3 +33,26 @@ jobs:
 
       - name: Version smoke test
         run: node bin/crypt-sync.js --version
+
+      # --- Claude Code plugin layer (does not ship in the npm package) ---
+
+      - name: Plugin gate — self test
+        if: runner.os != 'Windows'
+        run: sh hooks/require-cli.sh --self-test
+
+      - name: Plugin gate — covers every CLI command
+        if: runner.os == 'Linux' && matrix.node == '20'
+        run: node hooks/check-gate-sync.js
+
+      - name: npm tarball carries no plugin-only files
+        if: runner.os == 'Linux' && matrix.node == '20'
+        shell: bash
+        run: |
+          # package.json `files` is a whitelist, so .claude-plugin/, skills/ and
+          # hooks/ stay out of the tarball. If that whitelist is ever dropped,
+          # .npmignore takes over and these would silently start shipping.
+          if npm pack --dry-run 2>&1 | grep -Eq '\.claude-plugin|[[:space:]]skills/|hooks/(hooks\.json|require-cli|check-gate)'; then
+            echo "FAIL: plugin-only files leaked into the npm tarball"
+            exit 1
+          fi
+          echo "ok: tarball contains no plugin-only files"

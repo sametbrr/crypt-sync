@@ -1,7 +1,7 @@
 [![npm version](https://img.shields.io/npm/v/crypt-sync.svg)](https://www.npmjs.com/package/crypt-sync)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-[Hızlı Başlangıç](#hızlı-başlangıç) • [Özellikler](#özellikler) • [Kurulum](#kurulum) • [Kullanım](#kullanım) • [Nasıl Çalışır](#nasıl-çalışır) • [Sorun Giderme](#sorun-giderme)
+[Hızlı Başlangıç](#hızlı-başlangıç) • [Özellikler](#özellikler) • [Kurulum](#kurulum) • [Claude Code Eklentisi](#claude-code-eklentisi) • [Kullanım](#kullanım) • [Nasıl Çalışır](#nasıl-çalışır) • [Sorun Giderme](#sorun-giderme)
 
 # crypt-sync
 
@@ -94,6 +94,35 @@ npm uninstall -g crypt-sync
 # Identity dosyasını sil
 rm -rf ~/.config/crypt-sync
 ```
+
+---
+
+## Claude Code Eklentisi
+
+Aynı repo bir [Claude Code](https://claude.com/claude-code) eklentisi olarak da kurulabilir. Eklenti, Claude'a hangi durumda hangi crypt-sync komutunun gerektiğini ve daha önemlisi secretlarınla neyi asla yapmayacağını öğretir: `init`'i senin yerine çalıştırmaz (passphrase seninle terminalin arasında kalır), çözülmüş plaintext'i okuyup sana geri yazmaz, `--force` ve `--wipe`'ı sormadan kullanmaz.
+
+```bash
+# skill-hub marketplace üzerinden
+claude plugin marketplace add sametbrr/skill-hub
+claude plugin install crypt-sync@sametbrr/skill-hub
+
+# ya da doğrudan bu repodan
+claude plugin install github:sametbrr/crypt-sync
+```
+
+**Eklenti CLI'nin yerine geçmez — CLI'yi gerektirir.** Eklenti yalnızca bir skill; şifreleme, anahtar türetme ve paketle gelen `age` binary'si npm paketinde yaşar. İki şey CLI'nin `PATH`'te olmasına bağlı:
+
+- git hook'ları CLI'yi `command -v crypt-sync` ile arıyor
+- `age`, paketin postinstall scripti tarafından indiriliyor (`vendor/` git'te değil)
+
+Bu yüzden npm paketini de kur:
+
+```bash
+npm install -g crypt-sync
+crypt-sync init
+```
+
+Sadece eklentiyi kurarsan gürültülü bir hata almazsın — eklenti CLI'nin eksik olduğunu tespit eder ve başka bir şey yapmadan önce kurulumu teklif eder. Ayrıca projede `.cryptsync` olup CLI olmadığında oturum başında uyarır; çünkü o durumda git hook'ları **sessizce** atlanır: push'ta secretlar şifrelenmez, pull'da blob'lar çözülmez.
 
 ---
 

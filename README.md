@@ -1,7 +1,7 @@
 [![npm version](https://img.shields.io/npm/v/crypt-sync.svg)](https://www.npmjs.com/package/crypt-sync)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-[Quick Start](#quick-start) • [Features](#features) • [Installation](#installation) • [Usage](#usage) • [How It Works](#how-it-works) • [Troubleshooting](#troubleshooting)
+[Quick Start](#quick-start) • [Features](#features) • [Installation](#installation) • [Claude Code Plugin](#claude-code-plugin) • [Usage](#usage) • [How It Works](#how-it-works) • [Troubleshooting](#troubleshooting)
 
 # crypt-sync
 
@@ -94,6 +94,35 @@ npm uninstall -g crypt-sync
 # Remove identity file
 rm -rf ~/.config/crypt-sync
 ```
+
+---
+
+## Claude Code Plugin
+
+The same repository is also a [Claude Code](https://claude.com/claude-code) plugin. It teaches Claude when to reach for which crypt-sync command, and — more importantly — what never to do with your secrets: it will not run `init` for you (the passphrase must stay between you and your terminal), it will not read decrypted plaintext back to you, and it will not use `--force` or `--wipe` without asking.
+
+```bash
+# via the skill-hub marketplace
+claude plugin marketplace add sametbrr/skill-hub
+claude plugin install crypt-sync@sametbrr/skill-hub
+
+# or straight from this repository
+claude plugin install github:sametbrr/crypt-sync
+```
+
+**The plugin does not replace the CLI — it requires it.** The plugin is only a skill; encryption, key derivation and the bundled `age` binary all live in the npm package. Two things depend on the CLI being on `PATH`:
+
+- the git hooks look it up with `command -v crypt-sync`
+- `age` is fetched by the package's postinstall script (`vendor/` is not in git)
+
+So install the npm package too:
+
+```bash
+npm install -g crypt-sync
+crypt-sync init
+```
+
+If you install only the plugin, nothing breaks loudly — the plugin detects the missing CLI and offers to install it before doing anything else. It also warns at session start when a project has a `.cryptsync` manifest but no CLI, because in that state the git hooks skip **silently**: secrets are not encrypted on push and blobs are not decrypted on pull.
 
 ---
 

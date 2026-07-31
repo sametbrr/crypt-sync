@@ -1,0 +1,8 @@
+{
+  "name": "crypt-sync",
+  "description": "Keep .env and secret files encrypted in git, synced across machines via age — the Claude Code layer over the crypt-sync CLI",
+  "author": { "name": "sametbrr", "email": "sametbrr@gmail.com" },
+  "repository": "https://github.com/sametbrr/crypt-sync",
+  "license": "MIT",
+  "keywords": ["secrets", "dotenv", "encryption", "age", "git", "claude-code"]
+}

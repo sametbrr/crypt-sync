@@ -1,0 +1,29 @@
+{
+  "description": "Requires the crypt-sync CLI before any crypt-sync command runs, and warns when a project uses crypt-sync but the CLI is missing (git hooks skip silently in that state).",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/hooks/require-cli.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/hooks/require-cli.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
