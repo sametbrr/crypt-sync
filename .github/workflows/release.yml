@@ -27,6 +27,10 @@ jobs:
           generate_release_notes: true
 
       - name: Publish to npm
-        run: npm publish --access=public
+        # npm always packs README* files and may show README.tr.md on the
+        # package page; publish with the English README only.
+        run: |
+          rm -f README.tr.md
+          npm publish --access=public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
