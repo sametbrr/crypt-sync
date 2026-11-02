@@ -47,7 +47,7 @@ git push
 
 ## Requirements
 
-- Node.js ≥ 18
+- Node.js 22 or later (LTS)
 - Git
 - [age](https://github.com/FiloSottile/age) — downloaded automatically on `npm install`
 
@@ -349,6 +349,15 @@ git commit
 ```bash
 crypt-sync unlock --force
 ```
+
+---
+
+## Contributing
+
+- Questions and ideas: [Discussions](https://github.com/sametbrr/crypt-sync/discussions)
+- Bugs: [issue tracker](https://github.com/sametbrr/crypt-sync/issues)
+- Pull requests: read the [contribution guide](https://github.com/sametbrr/.github/blob/main/CONTRIBUTING.md) first
+- Security reports: follow the [security policy](https://github.com/sametbrr/crypt-sync/security/policy), not a public issue
 
 ---
 
