@@ -1,7 +1,7 @@
 [![npm version](https://img.shields.io/npm/v/crypt-sync.svg)](https://www.npmjs.com/package/crypt-sync)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-[Hızlı Başlangıç](#hızlı-başlangıç) • [Özellikler](#özellikler) • [Kurulum](#kurulum) • [Claude Code Eklentisi](#claude-code-eklentisi) • [Kullanım](#kullanım) • [Nasıl Çalışır](#nasıl-çalışır) • [Sorun Giderme](#sorun-giderme)
+[Hızlı Başlangıç](#hızlı-başlangıç) • [Kurulum](#kurulum) • [Kullanım](#kullanım) • [Yapılandırma](#yapılandırma) • [Nasıl Çalışır](#nasıl-çalışır) • [Sorun Giderme](#sorun-giderme)
 
 # crypt-sync
 
@@ -20,29 +20,13 @@
 ```bash
 npm install -g crypt-sync
 crypt-sync init       # makine başına bir kez — passphrase gir
-cd proje-dizini
+cd your-project
 crypt-sync setup      # interaktif: dosyaları gez → seç → şifrele → hook kur
 git commit -m "add encrypted secrets"
 git push
 ```
 
-**Başka bir makine (mevcut proje):**
-
-```bash
-npm install -g crypt-sync
-git clone <repo> && cd <repo>
-crypt-sync init       # aynı passphrase → hook'lar kurulur + dosyalar otomatik çözülür
-```
-
-**`npm install -g crypt-sync` güncellemesi sonrası:**
-
-```bash
-# @latest kullan — npm update -g önbelleğe alınmış metadata kullanabilir
-npm install -g crypt-sync@latest
-
-cd proje-dizini
-crypt-sync update-hooks   # .git/hooks/ dosyalarını yeni versiyona güncelle
-```
+**Başka bir makine (mevcut proje):** `npm install -g crypt-sync`, `git clone <repo> && cd <repo>`, ardından aynı passphrase ile `crypt-sync init` — hook'lar kurulur ve dosyalar otomatik çözülür.
 
 ---
 
@@ -82,22 +66,14 @@ Postinstall scripti, platformuna uygun `age` binary'sini indirir ve SHA256 check
 **Güncellemek için:**
 
 ```bash
-npm install -g crypt-sync@latest   # her zaman @latest kullan, npm update -g değil
+# @latest kullan — npm update -g önbelleğe alınmış metadata kullanabilir
+npm install -g crypt-sync@latest
+
+cd your-project
+crypt-sync update-hooks   # .git/hooks/ dosyalarını yeni versiyona güncelle
 ```
 
-### Kaldırma
-
-```bash
-# Global paketi kaldır
-npm uninstall -g crypt-sync
-
-# Identity dosyasını sil
-rm -rf ~/.config/crypt-sync
-```
-
----
-
-## Claude Code & Codex Eklentisi
+### Claude Code & Codex Eklentisi
 
 Aynı repo [Claude Code](https://claude.com/claude-code) ve [OpenAI Codex](https://developers.openai.com/codex) için eklenti olarak da kurulabilir. Eklenti, ajana hangi durumda hangi crypt-sync komutunun gerektiğini ve daha önemlisi secretlarınla neyi asla yapmayacağını öğretir: `init`'i senin yerine çalıştırmaz (passphrase seninle terminalin arasında kalır), çözülmüş plaintext'i okuyup sana geri yazmaz, `--force` ve `--wipe`'ı sormadan kullanmaz.
 
@@ -127,22 +103,32 @@ Codex'te eklenti hook'ları ancak bir kez güvenilir olarak işaretlendikten son
 
 Sadece eklentiyi kurarsan gürültülü bir hata almazsın — eklenti CLI'nin eksik olduğunu tespit eder ve başka bir şey yapmadan önce kurulumu teklif eder. Ayrıca projede `.cryptsync` olup CLI olmadığında oturum başında uyarır; çünkü o durumda git hook'ları **sessizce** atlanır: push'ta secretlar şifrelenmez, pull'da blob'lar çözülmez.
 
+### Kaldırma
+
+```bash
+# Global paketi kaldır
+npm uninstall -g crypt-sync
+
+# Identity dosyasını sil
+rm -rf ~/.config/crypt-sync
+```
+
 ---
 
 ## Kullanım
 
 ```
-crypt-sync <komut> [seçenekler]
+crypt-sync <command> [options]
 
-  init                        Passphrase'den şifreleme identity'si türet (makine başına bir kez)
-  setup                       İnteraktif setup: dosyaları gez, şifrele, hook kur
-  lock [--all] [--wipe]       Değişen entry'leri şifrele ve blob'ları git-add yap
-  unlock [--force]            Tüm blob'ları plaintext'e çöz
-  status                      Tüm entry'lerin şifreleme durumunu göster
-  clean                       Manifest'te olmayan orphan .age blob'larını temizle
-  update-hooks                Git hook'larını mevcut versiyona güncelle (npm update sonrası çalıştır)
-  export-key <yol>            Identity anahtarını dosyaya aktar
-  import-key <yol>            Identity anahtarını dosyadan içe aktar
+  init                        Derive encryption identity from passphrase (once per machine)
+  setup                       Interactive setup: browse files, encrypt, install hooks
+  lock [--all] [--wipe]       Encrypt changed entries and git-add blobs
+  unlock [--force]            Decrypt all blobs to plaintext
+  status                      Show encryption state for all entries
+  clean                       Remove orphan .age blobs not in manifest
+  update-hooks                Update git hooks to the current version (run after npm update)
+  export-key <path>           Export identity key to a file
+  import-key <path>           Import identity key from a file
 ```
 
 ### `init`
@@ -151,8 +137,8 @@ Makine başına bir kez çalıştırılır. scrypt kullanarak passphrase'den det
 
 ```bash
 crypt-sync init
-# Passphrase (min 8 karakter): ••••••••••
-# Identity kaydedildi: ~/.config/crypt-sync/identity.txt
+# Passphrase (min 8 chars): ••••••••••
+# Identity saved to: ~/.config/crypt-sync/identity.txt
 # Recipient: age1...
 ```
 
@@ -170,7 +156,7 @@ Mevcut identity'nin üzerine yazmak için `--force` kullanılır.
 İnteraktif proje kurulumu. Proje ağacını tarar, alt dizinlere girmeye izin verir ve `.cryptsync` manifest dosyasını tam relative path'lerle yazar.
 
 ```bash
-cd proje-dizini
+cd your-project
 crypt-sync setup
 ```
 
@@ -287,7 +273,7 @@ secrets/              # dizinin tamamını tek archive olarak şifrele
 | `*.pem` | Glob — yalnızca proje kökündeki dosyaları eşleştirir |
 | `**/*.pem` | Özyinelemeli glob |
 
-> **İpucu:** Basename pattern (`.env`) yerine tam relative path (`apps/bot/.env`) kullan. Basename pattern'lar çözümleme için plaintext dosyanın disk'te mevcut olmasına bağımlıdır; bu durum ilk `unlock` öncesi fresh clone'larda bozulur.
+> **Not:** Basename pattern (`.env`) yerine tam relative path (`apps/bot/.env`) kullan. Basename pattern'lar çözümleme için plaintext dosyanın disk'te mevcut olmasına bağımlıdır; bu durum ilk `unlock` öncesi fresh clone'larda bozulur.
 
 ---
 
@@ -329,7 +315,7 @@ Ya da age'i [github.com/FiloSottile/age/releases](https://github.com/FiloSottile
 
 ```bash
 crypt-sync lock
-git add apps/bot/.env.age
+git add .env.age
 git push
 ```
 
@@ -372,7 +358,8 @@ MIT — bkz. [LICENSE](LICENSE).
 
 ---
 
-<p align="center">
-  <a href="https://github.com/sametbrr/crypt-sync/issues">Hata Bildir</a> ·
-  <a href="https://github.com/sametbrr/crypt-sync/issues">Özellik İste</a>
-</p>
+<div align="center">
+
+[Hata Bildir](https://github.com/sametbrr/crypt-sync/issues) · [Özellik İste](https://github.com/sametbrr/crypt-sync/issues)
+
+</div>

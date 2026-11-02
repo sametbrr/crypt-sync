@@ -1,7 +1,7 @@
 [![npm version](https://img.shields.io/npm/v/crypt-sync.svg)](https://www.npmjs.com/package/crypt-sync)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-[Quick Start](#quick-start) • [Features](#features) • [Installation](#installation) • [Claude Code Plugin](#claude-code-plugin) • [Usage](#usage) • [How It Works](#how-it-works) • [Troubleshooting](#troubleshooting)
+[Quick Start](#quick-start) • [Installation](#installation) • [Usage](#usage) • [Configuration](#configuration) • [How It Works](#how-it-works) • [Troubleshooting](#troubleshooting)
 
 # crypt-sync
 
@@ -26,23 +26,7 @@ git commit -m "add encrypted secrets"
 git push
 ```
 
-**Another machine (existing project):**
-
-```bash
-npm install -g crypt-sync
-git clone <repo> && cd <repo>
-crypt-sync init       # same passphrase → hooks installed + files decrypted automatically
-```
-
-**After `npm install -g crypt-sync` update:**
-
-```bash
-# Use @latest — npm update -g may use cached metadata
-npm install -g crypt-sync@latest
-
-cd your-project
-crypt-sync update-hooks   # update .git/hooks/ to the new version
-```
+**Another machine (existing project):** `npm install -g crypt-sync`, `git clone <repo> && cd <repo>`, then `crypt-sync init` with the same passphrase — hooks are installed and files are decrypted automatically.
 
 ---
 
@@ -82,22 +66,14 @@ The postinstall script downloads the correct `age` binary for your platform and 
 **To update:**
 
 ```bash
-npm install -g crypt-sync@latest   # always use @latest, not npm update -g
+# Use @latest — npm update -g may use cached metadata
+npm install -g crypt-sync@latest
+
+cd your-project
+crypt-sync update-hooks   # update .git/hooks/ to the new version
 ```
 
-### Uninstall
-
-```bash
-# Remove global package
-npm uninstall -g crypt-sync
-
-# Remove identity file
-rm -rf ~/.config/crypt-sync
-```
-
----
-
-## Claude Code & Codex Plugin
+### Claude Code & Codex Plugin
 
 The same repository is also a plugin for [Claude Code](https://claude.com/claude-code) and [OpenAI Codex](https://developers.openai.com/codex). It teaches the agent when to reach for which crypt-sync command, and — more importantly — what never to do with your secrets: it will not run `init` for you (the passphrase must stay between you and your terminal), it will not read decrypted plaintext back to you, and it will not use `--force` or `--wipe` without asking.
 
@@ -126,6 +102,16 @@ crypt-sync init
 In Codex, plugin hooks run only after you trust them once (`/hooks` in the Codex TUI); until then the skill's own CLI check still applies.
 
 If you install only the plugin, nothing breaks loudly — the plugin detects the missing CLI and offers to install it before doing anything else. It also warns at session start when a project has a `.cryptsync` manifest but no CLI, because in that state the git hooks skip **silently**: secrets are not encrypted on push and blobs are not decrypted on pull.
+
+### Uninstall
+
+```bash
+# Remove global package
+npm uninstall -g crypt-sync
+
+# Remove identity file
+rm -rf ~/.config/crypt-sync
+```
 
 ---
 
@@ -287,7 +273,7 @@ secrets/              # encrypt entire directory as one archive
 | `*.pem` | Glob — matches files in project root only |
 | `**/*.pem` | Recursive glob |
 
-> **Tip:** Use full relative paths (e.g. `apps/bot/.env`) rather than basename patterns (`.env`). Basename patterns depend on the plaintext file existing on disk to resolve correctly, which breaks on fresh clones before the first `unlock`.
+> **Note:** Use full relative paths (e.g. `apps/bot/.env`) rather than basename patterns (`.env`). Basename patterns depend on the plaintext file existing on disk to resolve correctly, which breaks on fresh clones before the first `unlock`.
 
 ---
 
@@ -372,7 +358,8 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-<p align="center">
-  <a href="https://github.com/sametbrr/crypt-sync/issues">Report Bug</a> ·
-  <a href="https://github.com/sametbrr/crypt-sync/issues">Request Feature</a>
-</p>
+<div align="center">
+
+[Report Bug](https://github.com/sametbrr/crypt-sync/issues) · [Request Feature](https://github.com/sametbrr/crypt-sync/issues)
+
+</div>
