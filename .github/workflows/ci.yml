@@ -13,12 +13,13 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        node: ['18', '20', '22']
+        # Supported Node LTS lines (oldest maintenance → active LTS)
+        node: ['lts/-2', 'lts/-1', 'lts/*']
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node }}
 
@@ -41,11 +42,11 @@ jobs:
         run: sh hooks/require-cli.sh --self-test
 
       - name: Plugin gate — covers every CLI command
-        if: runner.os == 'Linux' && matrix.node == '20'
+        if: runner.os == 'Linux' && matrix.node == 'lts/*'
         run: node hooks/check-gate-sync.js
 
       - name: Plugin manifests match package.json version
-        if: runner.os == 'Linux' && matrix.node == '20'
+        if: runner.os == 'Linux' && matrix.node == 'lts/*'
         run: |
           P=$(node -p "require('./package.json').version")
           for m in .claude-plugin/plugin.json .codex-plugin/plugin.json; do
@@ -55,7 +56,7 @@ jobs:
           echo "ok: plugin manifests at $P"
 
       - name: npm tarball carries no plugin-only files
-        if: runner.os == 'Linux' && matrix.node == '20'
+        if: runner.os == 'Linux' && matrix.node == 'lts/*'
         shell: bash
         run: |
           # package.json `files` is a whitelist, so .claude-plugin/, .codex-plugin/, skills/ and

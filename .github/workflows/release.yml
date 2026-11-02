@@ -1,36 +1,83 @@
+# Release: npm CLI (+ agent plugin manifests kept in sync)
+# Trigger: a tag v<version> pushed from main (`npm run release:patch` does the bump and push).
+# Then: publish to npm with provenance and create a GitHub release with generated notes.
+# Guards: the tag commit must be on main, the tag must equal package.json `version`, and
+# .claude-plugin / .codex-plugin plugin.json must carry the same version.
+# Auth: an NPM_TOKEN secret, or npm trusted publishing (configure the repo on npmjs.com and
+# leave NPM_TOKEN unset).
 name: Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    tags: ['v*']
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 permissions:
   contents: write
+  id-token: write
 
 jobs:
   release:
-    name: GitHub Release + npm Publish
+    name: npm publish + GitHub release
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
         with:
-          node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
+          fetch-depth: 0
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+      - name: Check ref
+        env:
+          DEFAULT_BRANCH: main
+        run: |
+          COMMIT=$(git rev-parse "${GITHUB_SHA}^{commit}")
+          if ! git merge-base --is-ancestor "$COMMIT" "origin/$DEFAULT_BRANCH"; then
+            echo "::error::tag $GITHUB_REF_NAME points to a commit that is not on $DEFAULT_BRANCH"; exit 1
+          fi
+
+      - name: Resolve and cross-check version
+        id: v
+        run: |
+          VERSION=$(jq -r '.version // empty' package.json)
+          if [ -z "$VERSION" ]; then echo "::error::package.json has no version"; exit 1; fi
+          TAG="v${VERSION}"
+          if [ "$GITHUB_REF_NAME" != "$TAG" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match package.json version $VERSION"; exit 1
+          fi
+          for m in .claude-plugin/plugin.json .codex-plugin/plugin.json; do
+            [ -f "$m" ] || continue
+            M=$(jq -r '.version // empty' "$m")
+            if [ "$M" != "$VERSION" ]; then echo "::error::$m version '$M' != $VERSION"; exit 1; fi
+          done
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v7
         with:
-          generate_release_notes: true
+          node-version: lts/*
+          registry-url: https://registry.npmjs.org
 
       - name: Publish to npm
-        # npm always packs README* files and may show README.tr.md on the
-        # package page; publish with the English README only.
-        run: |
-          rm -f README.tr.md
-          npm publish --access=public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          VERSION: ${{ steps.v.outputs.version }}
+        run: |
+          NAME=$(jq -r '.name' package.json)
+          if npm view "${NAME}@${VERSION}" version >/dev/null 2>&1; then
+            echo "${NAME}@${VERSION} is already on npm; skipping publish."
+            exit 0
+          fi
+          # npm always packs README* files and may show README.tr.md on the
+          # package page; publish with the English README only.
+          rm -f README.tr.md
+          npm publish --provenance --access public
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.v.outputs.tag }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then echo "Release $TAG already exists."; exit 0; fi
+          gh release create "$TAG" --title "$TAG" --generate-notes --verify-tag

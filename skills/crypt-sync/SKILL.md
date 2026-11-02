@@ -34,7 +34,7 @@ Install problems, in order of likelihood:
 |---|---|---|
 | Install succeeded, `crypt-sync --version` still not found | the directory from `npm prefix -g` is not on `PATH` | add `$(npm prefix -g)/bin` to `PATH` |
 | `EACCES` / permission denied | npm global prefix is a system directory | **never suggest sudo** — use `npm config set prefix ~/.npm-global` or nvm |
-| `npm: command not found` | no Node.js | install Node.js ≥ 18 first, then return here |
+| `npm: command not found` | no Node.js | install Node.js ≥ 22 first, then return here |
 | `age binary not found` later | postinstall failed silently | `npm rebuild crypt-sync`, or install `age` manually onto `PATH` |
 
 ---
