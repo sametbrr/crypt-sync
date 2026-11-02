@@ -2,7 +2,12 @@
 # crypt-sync plugin gate.
 #
 #   PreToolUse   : a crypt-sync CLI call is attempted but the CLI is missing
-#                  -> deny the command and tell Claude to install the npm package
+#                  -> deny the command and tell the agent to install the npm package
+#
+# Runs under Claude Code and Codex: both send the same hook JSON on stdin and
+# both set CLAUDE_PLUGIN_ROOT for plugin hooks. The reason for the agent goes in
+# permissionDecisionReason / additionalContext; systemMessage is the short line
+# the user sees.
 #   SessionStart : this project has a .cryptsync manifest but the CLI is missing
 #                  -> warn, because the git hooks are skipping silently
 #
@@ -25,13 +30,21 @@ CLI_CALL='crypt-sync[[:space:]]+(init|setup|lock|unlock|status|clean|update-hook
 has_cli() { command -v crypt-sync >/dev/null 2>&1; }
 
 deny() {
-  printf '%s\n' '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny"},"systemMessage":"The crypt-sync CLI is not on PATH, so this command cannot work. This plugin ships only the skill; the engine is the npm package. Ask the user for permission, then run: npm install -g crypt-sync (its postinstall downloads the age binary and verifies its SHA256). Verify with: crypt-sync --version. If it is still not found, the directory from `npm prefix -g` is not on PATH. On EACCES do NOT use sudo — suggest `npm config set prefix ~/.npm-global` or nvm. Afterwards the USER must run `crypt-sync init` themselves: it prompts for a passphrase interactively, so never run it yourself and never pass a passphrase as an argument or environment variable."}'
+  printf '%s\n' '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"The crypt-sync CLI is not on PATH, so this command cannot work. This plugin ships only the skill; the engine is the npm package. Ask the user for permission, then run: npm install -g crypt-sync (its postinstall downloads the age binary and verifies its SHA256). Verify with: crypt-sync --version. If it is still not found, the directory from `npm prefix -g` is not on PATH. On EACCES do NOT use sudo — suggest `npm config set prefix ~/.npm-global` or nvm. Afterwards the USER must run `crypt-sync init` themselves: it prompts for a passphrase interactively, so never run it yourself and never pass a passphrase as an argument or environment variable."},"systemMessage":"crypt-sync: blocked because the crypt-sync CLI is not installed (npm install -g crypt-sync)."}'
   exit 0
 }
 
 warn_project() {
-  printf '%s\n' '{"systemMessage":"This project has a .cryptsync manifest but the crypt-sync CLI is not installed. Its git hooks (pre-commit guard, pre-push lock, post-merge unlock) are being skipped silently, so changed secrets are NOT being encrypted and .age blobs are NOT being decrypted. Tell the user to run: npm install -g crypt-sync && crypt-sync init"}'
+  printf '%s\n' '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"This project has a .cryptsync manifest but the crypt-sync CLI is not installed. Its git hooks (pre-commit guard, pre-push lock, post-merge unlock) are being skipped silently, so changed secrets are NOT being encrypted and .age blobs are NOT being decrypted. Tell the user to run: npm install -g crypt-sync && crypt-sync init"},"systemMessage":"crypt-sync: this project uses crypt-sync but the CLI is missing, so its git hooks are skipped. Run: npm install -g crypt-sync && crypt-sync init"}'
   exit 0
+}
+
+# Project root: CLAUDE_PROJECT_DIR (Claude Code), else the "cwd" field of the hook
+# JSON (Codex and Claude both send it), else the current directory.
+project_dir() {
+  if [ -n "${CLAUDE_PROJECT_DIR:-}" ]; then printf '%s' "$CLAUDE_PROJECT_DIR"; return; fi
+  dir=$(printf '%s' "$1" | sed -n 's/.*"cwd"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)
+  printf '%s' "${dir:-.}"
 }
 
 main() {
@@ -39,7 +52,7 @@ main() {
 
   case "$input" in
     *'"hook_event_name":"SessionStart"'* | *'"hook_event_name": "SessionStart"'*)
-      [ -f "${CLAUDE_PROJECT_DIR:-.}/.cryptsync" ] || exit 0
+      [ -f "$(project_dir "$input")/.cryptsync" ] || exit 0
       has_cli && exit 0
       warn_project
       ;;
@@ -58,8 +71,13 @@ self_test() {
   stubbed="$fake:$bare" # same PATH plus a fake crypt-sync, so `sh` itself stays reachable
   failed=0
 
-  check() { # label expected-substring ("" means: expect no output at all) PATH json [project_dir]
-    out=$(printf '%s' "$4" | PATH="$3" CLAUDE_PROJECT_DIR="${5:-/nonexistent}" sh "$0" || true)
+  check() { # label expected-substring ("" means: expect no output at all) PATH json [project_dir|-]
+    # project_dir "-" leaves CLAUDE_PROJECT_DIR unset (Codex), so the hook must use the JSON cwd.
+    if [ "${5:-}" = "-" ]; then
+      out=$(printf '%s' "$4" | env -u CLAUDE_PROJECT_DIR PATH="$3" sh "$0" || true)
+    else
+      out=$(printf '%s' "$4" | PATH="$3" CLAUDE_PROJECT_DIR="${5:-/nonexistent}" sh "$0" || true)
+    fi
     if [ -z "$2" ]; then
       if [ -z "$out" ]; then echo "ok   $1"
       else echo "FAIL $1 -- expected no output, got: $out"; failed=1; fi
@@ -73,6 +91,7 @@ self_test() {
 
   P='{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":'
   check "denies a CLI call when the CLI is missing" '"deny"' "$bare" "$P\"crypt-sync status\"}}"
+  check "deny reason reaches the agent"            'permissionDecisionReason' "$bare" "$P\"crypt-sync status\"}}"
   check "allows the install command"                ''       "$bare" "$P\"npm install -g crypt-sync\"}}"
   check "allows an unrelated command"               ''       "$bare" "$P\"git status\"}}"
   check "allows bare crypt-sync (help output)"      ''       "$bare" "$P\"crypt-sync\"}}"
@@ -83,7 +102,11 @@ self_test() {
   check "SessionStart is silent without a .cryptsync" '' "$bare" "$S" "$project"
   : >"$project/.cryptsync"
   check "SessionStart warns on .cryptsync without CLI" 'skipped silently' "$bare"    "$S" "$project"
+  check "SessionStart warning goes to agent context"   'additionalContext' "$bare"   "$S" "$project"
   check "SessionStart is silent when the CLI exists"   ''                 "$stubbed" "$S" "$project"
+  C="{\"hook_event_name\":\"SessionStart\",\"cwd\":\"$project\"}"
+  check "SessionStart uses JSON cwd without CLAUDE_PROJECT_DIR" 'additionalContext' "$bare" "$C" "-"
+  check "JSON cwd without .cryptsync stays silent" '' "$bare" '{"hook_event_name":"SessionStart","cwd":"/nonexistent"}' "-"
 
   rm -rf "$project" "$fake"
   [ "$failed" -eq 0 ] || { echo "self-test failed"; exit 1; }

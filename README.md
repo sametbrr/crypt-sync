@@ -63,7 +63,7 @@ crypt-sync update-hooks   # update .git/hooks/ to the new version
 
 ## Requirements
 
-- Node.js ≥ 16
+- Node.js ≥ 18
 - Git
 - [age](https://github.com/FiloSottile/age) — downloaded automatically on `npm install`
 
@@ -97,17 +97,18 @@ rm -rf ~/.config/crypt-sync
 
 ---
 
-## Claude Code Plugin
+## Claude Code & Codex Plugin
 
-The same repository is also a [Claude Code](https://claude.com/claude-code) plugin. It teaches Claude when to reach for which crypt-sync command, and — more importantly — what never to do with your secrets: it will not run `init` for you (the passphrase must stay between you and your terminal), it will not read decrypted plaintext back to you, and it will not use `--force` or `--wipe` without asking.
+The same repository is also a plugin for [Claude Code](https://claude.com/claude-code) and [OpenAI Codex](https://developers.openai.com/codex). It teaches the agent when to reach for which crypt-sync command, and — more importantly — what never to do with your secrets: it will not run `init` for you (the passphrase must stay between you and your terminal), it will not read decrypted plaintext back to you, and it will not use `--force` or `--wipe` without asking.
 
 ```bash
-# via the skill-hub marketplace
+# Claude Code
 claude plugin marketplace add sametbrr/skill-hub
-claude plugin install crypt-sync@sametbrr/skill-hub
+claude plugin install crypt-sync@skill-hub
 
-# or straight from this repository
-claude plugin install github:sametbrr/crypt-sync
+# Codex
+codex plugin marketplace add sametbrr/skill-hub
+codex plugin add crypt-sync@skill-hub
 ```
 
 **The plugin does not replace the CLI — it requires it.** The plugin is only a skill; encryption, key derivation and the bundled `age` binary all live in the npm package. Two things depend on the CLI being on `PATH`:
@@ -121,6 +122,8 @@ So install the npm package too:
 npm install -g crypt-sync
 crypt-sync init
 ```
+
+In Codex, plugin hooks run only after you trust them once (`/hooks` in the Codex TUI); until then the skill's own CLI check still applies.
 
 If you install only the plugin, nothing breaks loudly — the plugin detects the missing CLI and offers to install it before doing anything else. It also warns at session start when a project has a `.cryptsync` manifest but no CLI, because in that state the git hooks skip **silently**: secrets are not encrypted on push and blobs are not decrypted on pull.
 

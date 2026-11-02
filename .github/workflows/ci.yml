@@ -44,14 +44,24 @@ jobs:
         if: runner.os == 'Linux' && matrix.node == '20'
         run: node hooks/check-gate-sync.js
 
+      - name: Plugin manifests match package.json version
+        if: runner.os == 'Linux' && matrix.node == '20'
+        run: |
+          P=$(node -p "require('./package.json').version")
+          for m in .claude-plugin/plugin.json .codex-plugin/plugin.json; do
+            V=$(node -p "require('./$m').version")
+            [ "$V" = "$P" ] || { echo "FAIL: $m version $V != package.json $P"; exit 1; }
+          done
+          echo "ok: plugin manifests at $P"
+
       - name: npm tarball carries no plugin-only files
         if: runner.os == 'Linux' && matrix.node == '20'
         shell: bash
         run: |
-          # package.json `files` is a whitelist, so .claude-plugin/, skills/ and
+          # package.json `files` is a whitelist, so .claude-plugin/, .codex-plugin/, skills/ and
           # hooks/ stay out of the tarball. If that whitelist is ever dropped,
           # .npmignore takes over and these would silently start shipping.
-          if npm pack --dry-run 2>&1 | grep -Eq '\.claude-plugin|[[:space:]]skills/|hooks/(hooks\.json|require-cli|check-gate)'; then
+          if npm pack --dry-run 2>&1 | grep -Eq '\.(claude|codex)-plugin|[[:space:]]skills/|hooks/(hooks\.json|require-cli|check-gate)'; then
             echo "FAIL: plugin-only files leaked into the npm tarball"
             exit 1
           fi

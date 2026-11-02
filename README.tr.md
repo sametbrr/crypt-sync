@@ -63,7 +63,7 @@ crypt-sync update-hooks   # .git/hooks/ dosyalarını yeni versiyona güncelle
 
 ## Gereksinimler
 
-- Node.js ≥ 16
+- Node.js ≥ 18
 - Git
 - [age](https://github.com/FiloSottile/age) — `npm install` sırasında otomatik indirilir
 
@@ -97,17 +97,18 @@ rm -rf ~/.config/crypt-sync
 
 ---
 
-## Claude Code Eklentisi
+## Claude Code & Codex Eklentisi
 
-Aynı repo bir [Claude Code](https://claude.com/claude-code) eklentisi olarak da kurulabilir. Eklenti, Claude'a hangi durumda hangi crypt-sync komutunun gerektiğini ve daha önemlisi secretlarınla neyi asla yapmayacağını öğretir: `init`'i senin yerine çalıştırmaz (passphrase seninle terminalin arasında kalır), çözülmüş plaintext'i okuyup sana geri yazmaz, `--force` ve `--wipe`'ı sormadan kullanmaz.
+Aynı repo [Claude Code](https://claude.com/claude-code) ve [OpenAI Codex](https://developers.openai.com/codex) için eklenti olarak da kurulabilir. Eklenti, ajana hangi durumda hangi crypt-sync komutunun gerektiğini ve daha önemlisi secretlarınla neyi asla yapmayacağını öğretir: `init`'i senin yerine çalıştırmaz (passphrase seninle terminalin arasında kalır), çözülmüş plaintext'i okuyup sana geri yazmaz, `--force` ve `--wipe`'ı sormadan kullanmaz.
 
 ```bash
-# skill-hub marketplace üzerinden
+# Claude Code
 claude plugin marketplace add sametbrr/skill-hub
-claude plugin install crypt-sync@sametbrr/skill-hub
+claude plugin install crypt-sync@skill-hub
 
-# ya da doğrudan bu repodan
-claude plugin install github:sametbrr/crypt-sync
+# Codex
+codex plugin marketplace add sametbrr/skill-hub
+codex plugin add crypt-sync@skill-hub
 ```
 
 **Eklenti CLI'nin yerine geçmez — CLI'yi gerektirir.** Eklenti yalnızca bir skill; şifreleme, anahtar türetme ve paketle gelen `age` binary'si npm paketinde yaşar. İki şey CLI'nin `PATH`'te olmasına bağlı:
@@ -121,6 +122,8 @@ Bu yüzden npm paketini de kur:
 npm install -g crypt-sync
 crypt-sync init
 ```
+
+Codex'te eklenti hook'ları ancak bir kez güvenilir olarak işaretlendikten sonra çalışır (Codex TUI'de `/hooks`); o zamana kadar skill'in kendi CLI kontrolü geçerlidir.
 
 Sadece eklentiyi kurarsan gürültülü bir hata almazsın — eklenti CLI'nin eksik olduğunu tespit eder ve başka bir şey yapmadan önce kurulumu teklif eder. Ayrıca projede `.cryptsync` olup CLI olmadığında oturum başında uyarır; çünkü o durumda git hook'ları **sessizce** atlanır: push'ta secretlar şifrelenmez, pull'da blob'lar çözülmez.
 

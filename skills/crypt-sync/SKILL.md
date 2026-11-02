@@ -21,7 +21,7 @@ command -v crypt-sync
 
 **Found** → go to Gate 1.
 
-**Not found** → stop. Do not install it silently; a global npm install changes the user's system. Ask first (AskUserQuestion):
+**Not found** → stop. Do not install it silently; a global npm install changes the user's system. Ask the user first and wait for an explicit yes:
 
 > "The crypt-sync CLI is not installed. Install it with `npm install -g crypt-sync`?"
 
@@ -34,7 +34,7 @@ Install problems, in order of likelihood:
 |---|---|---|
 | Install succeeded, `crypt-sync --version` still not found | the directory from `npm prefix -g` is not on `PATH` | add `$(npm prefix -g)/bin` to `PATH` |
 | `EACCES` / permission denied | npm global prefix is a system directory | **never suggest sudo** — use `npm config set prefix ~/.npm-global` or nvm |
-| `npm: command not found` | no Node.js | install Node.js ≥ 16 first, then return here |
+| `npm: command not found` | no Node.js | install Node.js ≥ 18 first, then return here |
 | `age binary not found` later | postinstall failed silently | `npm rebuild crypt-sync`, or install `age` manually onto `PATH` |
 
 ---

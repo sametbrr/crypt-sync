@@ -1,0 +1,43 @@
+{
+  "name": "crypt-sync",
+  "version": "1.0.5",
+  "description": "Keep .env and secret files encrypted in git, synced across machines via age — the agent layer (Claude Code and Codex) over the crypt-sync CLI",
+  "author": {
+    "name": "sametbrr",
+    "email": "sametbrr@gmail.com",
+    "url": "https://github.com/sametbrr"
+  },
+  "homepage": "https://github.com/sametbrr/crypt-sync",
+  "repository": "https://github.com/sametbrr/crypt-sync",
+  "license": "MIT",
+  "keywords": [
+    "secrets",
+    "dotenv",
+    "encryption",
+    "age",
+    "git",
+    "claude-code",
+    "codex"
+  ],
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json",
+  "interface": {
+    "displayName": "crypt-sync",
+    "shortDescription": "Encrypted .env files in git, synced across machines",
+    "longDescription": "Decision layer over the crypt-sync npm CLI: encrypts secret files with age, commits the .age blobs, and decrypts them on pull. Gates every crypt-sync command on the CLI being installed and never handles your passphrase.",
+    "developerName": "sametbrr",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write",
+      "Lifecycle hooks"
+    ],
+    "defaultPrompt": [
+      "Encrypt my .env files with crypt-sync",
+      "Why did git pull not decrypt my secrets?",
+      "Set up crypt-sync on this new machine"
+    ],
+    "websiteURL": "https://github.com/sametbrr/crypt-sync"
+  }
+}
